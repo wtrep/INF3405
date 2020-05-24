@@ -14,7 +14,7 @@ public class Client {
      * Application client
      */
 
-    private static String validationIP(BufferedReader reader) {
+    private static InetAddress validationIP(BufferedReader reader) {
         //Demande IP
         System.out.println("Veuillez entrez l'adresse IP du serveur : ");
         //Initialisation de variable
@@ -35,7 +35,7 @@ public class Client {
             System.out.println("Adresse IP entrée invalide! Veuillez entre une adresse du format XXX.XXX.XXX.XXX : ");
         }
 
-        return serverAddress;
+        return InetAddress.getByName(serverAddress);
     }
 
     private static int validationPort(BufferedReader reader) {
