@@ -131,7 +131,7 @@ public class Client {
     }
 
 
-    public static void main(String[] args) throws Exception
+    public void main(String[] args) throws Exception
     {
         //Issue #11 : Saisie des paramètres du serveur (adresse IP, port d'écoute entre 5000 et 5050)
         //Canal d'entree de la console
