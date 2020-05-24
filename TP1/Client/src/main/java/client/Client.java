@@ -20,10 +20,9 @@ public class Client {
         //Initialisation de variable
         String serverAddress = "";
         boolean valid = false;
-        int octet1, octet2, octet3, octet4;
-
+        String IP_PATTERN = "^((0|1\\d?\\d?|2[0-4]?\\d?|25[0-5]?|[3-9]\\d?)\\.){3}(0|1\\d?\\d?|2[0-4]?\\d?|25[0-5]?|[3-9]\\d?)$";
         while (!valid) {
-            //Donnees entrée par la console
+            //Donnees entree par la console
             try {
                 serverAddress = reader.readLine();
             }
@@ -31,31 +30,8 @@ public class Client {
                 e.printStackTrace();
             }
             //Vérification de la validité des données
-            int nbrDePoints = serverAddress.length()-serverAddress.replace(".", "").length();
-            if (serverAddress.contains(".") && nbrDePoints==3) {
-                String[] octets = serverAddress.split("\\."); // Les backslash sont utilises pour echapper valeur special de .
-                if(octets.length == 4) {
-                    try {
-                        octet1 = Integer.parseInt(octets[0]);
-                        octet2 = Integer.parseInt(octets[1]);
-                        octet3 = Integer.parseInt(octets[2]);
-                        octet4 = Integer.parseInt(octets[3]);
-                    }
-                    catch (NumberFormatException e)
-                    {
-                        octet1 = octet2 = octet3 = octet4 = 128;
-                    }
-
-                    if(octet1 >= 0 && octet1 < 128 ) {
-                        if(octet2 >= 0 && octet2 < 128 ) {
-                            if(octet3 >= 0 && octet3 < 128 ) {
-                                if(octet4 >= 0 && octet4 < 128 ) {
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                }
+            if(serverAddress.matches(IP_PATTERN)) {
+                break;
             }
             System.out.println("Adresse IP entrée invalide! Veuillez entre une adresse du format XXX.XXX.XXX.XXX : ");
         }
