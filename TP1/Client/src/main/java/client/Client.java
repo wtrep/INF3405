@@ -139,7 +139,7 @@ public class Client {
         } catch (UnknownHostException e){
             System.out.println("Hôte inconnu! Essai avec 127.0.0.1");
             e.printStackTrace();
-            String serverAddress = "127.0.0.1"
+            String serverAddress = "127.0.0.1";
         }
         int port= validationPort(reader);
 
