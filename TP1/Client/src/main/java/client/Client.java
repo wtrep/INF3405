@@ -149,8 +149,10 @@ public class Client {
 //		BufferedReader serverReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         try {
             //Écriture, reception
-            SendMessage send = new SendMessage(socket).start();
-            ReadMessage read = new ReadMessage(socket).start();
+            SendMessage send = new SendMessage(socket);
+            send.start();
+            ReadMessage read = new ReadMessage(socket);
+            read.start();
             //Attendre que les threads finissent
             send.join();
             read.join();
