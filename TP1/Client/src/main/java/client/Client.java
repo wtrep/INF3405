@@ -134,7 +134,7 @@ public class Client {
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
 
         //Addresse et port du serveur
-        String serverAddress = validationIP(reader);
+        InetAddress serverAddress = validationIP(reader);
         int port= validationPort(reader);
 //		int port = 5000;
 //		String serverAddress = "127.0.0.1";
