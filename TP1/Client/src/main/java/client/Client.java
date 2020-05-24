@@ -30,8 +30,11 @@ public class Client {
             }
             System.out.println("Adresse IP entrée invalide! Veuillez entre une adresse du format XXX.XXX.XXX.XXX : ");
         }
-
-        return InetAddress.getByName(serverAddress);
+        try{
+            return InetAddress.getByName(serverAddress);
+        } catch (UnknownHostException e){
+            e.printStackTrace();
+        }
     }
 
     private static int validationPort(BufferedReader reader) {
