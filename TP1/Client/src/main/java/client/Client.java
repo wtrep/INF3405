@@ -58,7 +58,7 @@ public class Client {
         return serverPort;
     }
 
-    private static class SendMessage extends Thread {
+    private class SendMessage extends Thread {
         BufferedReader userIn; 
         BufferedWriter writer;  
         boolean connected;
@@ -98,7 +98,7 @@ public class Client {
         }
     }
 
-    private static class ReadMessage extends Thread {
+    private class ReadMessage extends Thread {
         BufferedReader receiver;
         boolean connected;
 
