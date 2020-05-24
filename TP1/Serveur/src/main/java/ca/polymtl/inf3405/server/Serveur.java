@@ -1,3 +1,7 @@
+package ca.polymtl.inf3405.server;
+
+import ca.polymtl.inf3405.protocol.Message;
+
 import java.io.*;
 import java.net.*;
 import java.time.*;
@@ -6,6 +10,8 @@ import java.util.*;
 
 public class Serveur
 {
+    	private volatile static Map<String, User> connectedClients;
+    	private volatile static Queue<Message> messagesQueue;
 	private static ServerSocket listener;
 	public static List<ClientHandler> clients;
 	
