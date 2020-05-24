@@ -60,15 +60,15 @@ public class Client {
     }
 
     private static class SendMessage extends Thread {
-        BufferedReader reader; // ou bufferReader
-        BufferedWriter writer;   // ou bufferWriter
+        BufferedReader userIn; 
+        BufferedWriter writer;  
         boolean connected;
 
         public SendMessage(Socket socket) {
-            input = new BufferedReader(new InputStreamReader(System.in));
+            userIn = new BufferedReader(new InputStreamReader(System.in));
             connected = true;
             try {
-                output = new BufferedWriter(new PrintWriter(socket.getOutputStream()));
+                writer = new BufferedWriter(new PrintWriter(socket.getOutputStream()));
             } catch (IOException e) {
                 System.out.println("Le socket n'est pas connecté veuillez réessayer.");
                 connected = false;
@@ -81,15 +81,15 @@ public class Client {
             while(true) {
                 try {
                     //Chercher input
-                    inputMessage = input.readLine();
+                    inputMessage = userIn.readLine();
 
                     //TODO Former message
                     message = inputMessage;
 
                     //Envoyer le message
-                    output.write(message);
-                    output.newLine();
-                    output.flush();
+                    writer.write(message);
+                    writer.newLine();
+                    writer.flush();
                 }
                 catch(IOException e) {
                     System.out.println("Erreur dans l'envoi du message! Déconnexion.");
@@ -100,13 +100,13 @@ public class Client {
     }
 
     private static class ReadMessage extends Thread {
-        BufferedReader input;
+        BufferedReader receiver;
         boolean connected;
 
         public ReadMessage(Socket socket) {
             connected = true;
             try {
-                input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                receiver = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             } catch (IOException e) {
                 System.out.println("Le socket n'est pas connecté veuillez réessayer.");
                 connected = false;
@@ -118,7 +118,7 @@ public class Client {
             while(connected) {
                 try {
                     //Chercher le message
-                    message = input.readLine();
+                    message = receiver.readLine();
 
                     //Afficher le message
                     System.out.println(message);
