@@ -134,13 +134,7 @@ public class Client {
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
 
         //Addresse et port du serveur
-        try{
-            InetAddress serverAddress = InetAddress.getByName(validationIP(reader));
-        } catch (UnknownHostException e){
-            System.out.println("Hôte inconnu! Essai avec 127.0.0.1");
-            e.printStackTrace();
-            String serverAddress = "127.0.0.1";
-        }
+        String serverAddress = validationIP(reader);
         int port= validationPort(reader);
 
         //TEST pour receiveMessage(socket)
