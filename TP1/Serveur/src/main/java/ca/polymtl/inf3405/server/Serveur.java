@@ -20,16 +20,16 @@ public class Serveur
 		String serverAddress = "";
 		boolean valid = false;
 		int octet1, octet2, octet3, octet4;
-		
+		String IP_PATTERN = "^((0|1"
 		while (!valid) {
-			//Donnees entr�e par la console
+			//Donnees entree par la console
 			try {	
 				serverAddress = reader.readLine();
 			}
 			catch(IOException e) {
 				e.printStackTrace();
 			}
-			//V�rification de la validit� des donn�es
+			//Verification de la validite des donnees
 			int nbrDePoints = serverAddress.length()-serverAddress.replace(".", "").length();
 			if (serverAddress.contains(".") && nbrDePoints==3) {
 				String[] octets = serverAddress.split("\\."); // Les backslash sont utilises pour echapper valeur special de .
@@ -56,7 +56,7 @@ public class Serveur
 					}
 				}
 			}
-			System.out.println("Adresse IP entr�e invalide! Veuillez entre une adresse du format XXX.XXX.XXX.XXX : ");
+			System.out.println("Adresse IP entree invalide! Veuillez entre une adresse du format XXX.XXX.XXX.XXX : ");
 		}
 		
 		return serverAddress;
@@ -64,11 +64,11 @@ public class Serveur
 
 	private static int validationPort(BufferedReader reader) {
 		//Demande Port
-		System.out.println("Veuillez entrez le port d'�coute du serveur : ");
+		System.out.println("Veuillez entrez le port d'ecoute du serveur : ");
 		int serverPort = 0;
 		while( serverPort<5000 || serverPort>5050 ) 		
 		{
-			//Donnees entr�es par la console
+			//Donnees entrees par la console
 			try {
 				serverPort = Integer.parseInt(reader.readLine());
 			}
@@ -126,7 +126,7 @@ public class Serveur
 		}
 		finally
 		{
-			//Fermeture du socket d'�coute
+			//Fermeture du socket d'ecoute
 			listener.close();
 		}
 	}
@@ -153,7 +153,7 @@ public class Serveur
 				this.reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 				this.writer = new BufferedWriter(new PrintWriter(socket.getOutputStream()));
 			} catch (IOException e) {
-				System.out.println("Erreur lors de la connexion, veuillez r�essayer!");
+				System.out.println("Erreur lors de la connexion, veuillez reessayer!");
 				isLoggedIn=false;
 			}
 		}
@@ -176,7 +176,7 @@ public class Serveur
 					//Afficher sur console serveur
 					System.out.println(message);
 					
-					//Pour tous les clients, TODO :ajouter filtre par apr�s
+					//Pour tous les clients, TODO :ajouter filtre par apres
 					for(ClientHandler client : Serveur.clients) {
 						client.getOutput().write(message);
 						client.getOutput().newLine();
@@ -190,13 +190,13 @@ public class Serveur
 					
 					
 				} catch (Exception e) {
-					System.out.println("La connexion a �t� coup�e avec " + this.username + "!");
+					System.out.println("La connexion a ete coupee avec " + this.username + "!");
 					isLoggedIn=false;
 					clients.remove(this);
 				}
 			}
 			try {
-				//Rel�cher les ressources
+				//Relacher les ressources
 				this.reader.close();
 				this.writer.close();
 				this.socket.close();

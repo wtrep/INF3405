@@ -1,3 +1,7 @@
 **/build/*
 **/.gradle/*
 **/.idea/*
+
+
+#Google Drive sync files
+*.ini
