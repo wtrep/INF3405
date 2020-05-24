@@ -14,7 +14,7 @@ public class Client {
      * Application client
      */
 
-    private String validationIP(BufferedReader reader) {
+    private static String validationIP(BufferedReader reader) {
         //Demande IP
         System.out.println("Veuillez entrez l'adresse IP du serveur : ");
         //Initialisation de variable
@@ -38,7 +38,7 @@ public class Client {
         return serverAddress;
     }
 
-    private int validationPort(BufferedReader reader) {
+    private static int validationPort(BufferedReader reader) {
         //Demande Port
         System.out.println("Veuillez entrez le port d'écoute du serveur : ");
         int serverPort = 0;
@@ -58,7 +58,7 @@ public class Client {
         return serverPort;
     }
 
-    private class SendMessage extends Thread {
+    private static class SendMessage extends Thread {
         BufferedReader userIn; 
         BufferedWriter writer;  
         boolean connected;
@@ -98,7 +98,7 @@ public class Client {
         }
     }
 
-    private class ReadMessage extends Thread {
+    private static class ReadMessage extends Thread {
         BufferedReader receiver;
         boolean connected;
 
@@ -131,7 +131,7 @@ public class Client {
     }
 
 
-    public void main(String[] args) throws Exception
+    public static void main(String[] args) throws Exception
     {
         //Issue #11 : Saisie des paramètres du serveur (adresse IP, port d'écoute entre 5000 et 5050)
         //Canal d'entree de la console
@@ -149,11 +149,11 @@ public class Client {
 //		BufferedReader serverReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         try {
             //Écriture, reception
-            new SendMessage(socket).start();
-            new ReadMessage(socket).start();
+            SendMessage send = new SendMessage(socket).start();
+            ReadMessage read = new ReadMessage(socket).start();
             //Attendre que les threads finissent
-            SendMessage.join();
-            ReadMessage.join();
+            send.join();
+            read.join();
         }
         finally {
             System.out.println("Tu as été déconnecté du serveur!");
