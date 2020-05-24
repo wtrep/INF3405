@@ -24,11 +24,8 @@ public class Client {
             catch(IOException e) {
                 e.printStackTrace();
             }
-            //Pour ne pas afficher message d'erreur si adresse bonne
-            if(serverAddress.matches(IP_PATTERN)) {
-                break;
-            }
-            System.out.println("Adresse IP entrée invalide! Veuillez entre une adresse du format XXX.XXX.XXX.XXX : ");
+            if(!serverAddress.matches(IP_PATTERN))
+                System.out.println("Adresse IP entrée invalide! Veuillez entre une adresse du format XXX.XXX.XXX.XXX : ");
         }
         
         return serverAddress;
