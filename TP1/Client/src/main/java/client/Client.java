@@ -137,8 +137,6 @@ public class Client {
         //Addresse et port du serveur
         InetAddress serverAddress = validationIP(reader);
         int port= validationPort(reader);
-//		int port = 5000;
-//		String serverAddress = "127.0.0.1";
 
         //TEST pour receiveMessage(socket)
         //Creation d'une nouvelle connexion avec le serveur
