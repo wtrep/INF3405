@@ -14,7 +14,7 @@ public class Client {
      * Application client
      */
 
-    private static String validationIP(BufferedReader reader) {
+    private String validationIP(BufferedReader reader) {
         //Demande IP
         System.out.println("Veuillez entrez l'adresse IP du serveur : ");
         //Initialisation de variable
@@ -38,7 +38,7 @@ public class Client {
         return serverAddress;
     }
 
-    private static int validationPort(BufferedReader reader) {
+    private int validationPort(BufferedReader reader) {
         //Demande Port
         System.out.println("Veuillez entrez le port d'écoute du serveur : ");
         int serverPort = 0;
