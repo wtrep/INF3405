@@ -10,7 +10,7 @@ public class Client {
      * Application client
      */
 
-    private static InetAddress validationIP(BufferedReader reader) {
+    private static String validationIP(BufferedReader reader) {
         //Demande IP
         System.out.println("Veuillez entrez l'adresse IP du serveur : ");
         //Initialisation de variable
@@ -25,14 +25,13 @@ public class Client {
                 e.printStackTrace();
             }
             //Pour ne pas afficher message d'erreur si adresse bonne
-            if(!serverAddress.matches(IP_PATTERN))
-                System.out.println("Adresse IP entrée invalide! Veuillez entre une adresse du format XXX.XXX.XXX.XXX : ");
+            if(serverAddress.matches(IP_PATTERN)) {
+                break;
+            }
+            System.out.println("Adresse IP entrée invalide! Veuillez entre une adresse du format XXX.XXX.XXX.XXX : ");
         }
-        try{
-            return InetAddress.getByName(serverAddress);
-        } catch (UnknownHostException e){
-            e.printStackTrace();
-        }
+        
+        return serverAddress;
     }
 
     private static int validationPort(BufferedReader reader) {
@@ -135,8 +134,15 @@ public class Client {
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
 
         //Addresse et port du serveur
-        InetAddress serverAddress = validationIP(reader);
+        try{
+            InetAddress serverAddress = InetAddress.getByName(validationIP(reader));
+        } catch (UnknownHostException e){
+            System.out.println("Hôte inconnu!");
+            e.printStackTrace();
+        }
         int port= validationPort(reader);
+//		int port = 5000;
+//		String serverAddress = "127.0.0.1";
 
         //TEST pour receiveMessage(socket)
         //Creation d'une nouvelle connexion avec le serveur
