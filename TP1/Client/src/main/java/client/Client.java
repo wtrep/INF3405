@@ -62,8 +62,8 @@ public class Client {
     }
 
     private static class SendMessage extends Thread {
-        BufferedReader input;
-        BufferedWriter output;
+        BufferedReader reader; // ou bufferReader
+        BufferedWriter writer;   // ou bufferWriter
         boolean connected;
 
         public SendMessage(Socket socket) {
@@ -166,4 +166,3 @@ public class Client {
         }
     }
 }
-
