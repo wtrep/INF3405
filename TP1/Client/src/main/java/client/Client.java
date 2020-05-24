@@ -52,10 +52,8 @@ public class Client {
             catch(Exception e) {
                 serverPort = 0;
             }
-            if (serverPort>=5000 && serverPort<=5050) //Pour ne pas afficher message d'erreur si correct
-                break;
-            //Message d'erreur
-            System.out.println("Port invalide! (Veuillez entrez un nombre entre 5000 et 5050) ");
+            if (!(serverPort<5000 || serverPort>5050))
+                System.out.println("Port invalide! (Veuillez entrez un nombre entre 5000 et 5050) ");
         }
 
         return serverPort;
