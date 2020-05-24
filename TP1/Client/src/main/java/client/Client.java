@@ -19,9 +19,8 @@ public class Client {
         System.out.println("Veuillez entrez l'adresse IP du serveur : ");
         //Initialisation de variable
         String serverAddress = "";
-        boolean valid = false;
         String IP_PATTERN = "^((0|1\\d?\\d?|2[0-4]?\\d?|25[0-5]?|[3-9]\\d?)\\.){3}(0|1\\d?\\d?|2[0-4]?\\d?|25[0-5]?|[3-9]\\d?)$";
-        while (!valid) {
+        while (!serverAddress.matches(IP_PATTERN)) {
             //Donnees entree par la console
             try {
                 serverAddress = reader.readLine();
@@ -29,7 +28,7 @@ public class Client {
             catch(IOException e) {
                 e.printStackTrace();
             }
-            //Vérification de la validité des données
+            //Pour ne pas afficher message d'erreur si adresse bonne
             if(serverAddress.matches(IP_PATTERN)) {
                 break;
             }
