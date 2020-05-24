@@ -150,11 +150,11 @@ public class Client {
 //		BufferedReader serverReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         try {
             //Écriture, reception
-            if (true) {
-                new SendMessage(socket).start();
-                new ReadMessage(socket).start();
-            }
-            while(true) {}
+            new SendMessage(socket).start();
+            new ReadMessage(socket).start();
+            //Attendre que les threads finissent
+            SendMessage.join();
+            ReadMessage.join();
         }
         finally {
             System.out.println("Tu as été déconnecté du serveur!");
