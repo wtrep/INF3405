@@ -137,12 +137,11 @@ public class Client {
         try{
             InetAddress serverAddress = InetAddress.getByName(validationIP(reader));
         } catch (UnknownHostException e){
-            System.out.println("Hôte inconnu!");
+            System.out.println("Hôte inconnu! Essai avec 127.0.0.1");
             e.printStackTrace();
+            String serverAddress = "127.0.0.1"
         }
         int port= validationPort(reader);
-//		int port = 5000;
-//		String serverAddress = "127.0.0.1";
 
         //TEST pour receiveMessage(socket)
         //Creation d'une nouvelle connexion avec le serveur
