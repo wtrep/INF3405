@@ -1,6 +1,11 @@
 package ca.polymtl.inf3405.server;
 
+import ca.polymtl.inf3405.database.Database;
+import ca.polymtl.inf3405.exceptions.DatabaseInsertionException;
+import ca.polymtl.inf3405.exceptions.NoUserException;
 import ca.polymtl.inf3405.protocol.Message;
+import ca.polymtl.inf3405.protocol.Request;
+import ca.polymtl.inf3405.protocol.Response;
 
 import java.io.*;
 import java.net.*;
@@ -10,7 +15,7 @@ import java.util.*;
 
 public class Serveur
 {
-	private volatile static Map<String, User> connectedClients;
+	private volatile static Map<String, ConnectedUser> connectedUsers;
     private volatile static Queue<Message> messagesQueue;
     private static ServerSocket listener;
     public static List<ClientHandler> clients;
@@ -79,7 +84,7 @@ public class Serveur
 		{
 			while(true)
 			{
-				ClientHandler client = new ClientHandler(listener.accept());
+				ClientHandler client = new ClientHandler(listener.accept(), connectedUsers, messagesQueue);
 				client.start();
 			}
 		} catch (Exception e) {
@@ -101,13 +106,19 @@ public class Serveur
 		private Socket socket;
 		private DataInputStream reader;
 		private DataOutputStream writer;
+		private Database database;
+		private volatile Map<String, ConnectedUser> connectedUsers;
+		private volatile Queue<Message> messagesQueue;
 		
-		public ClientHandler(Socket socket)
+		public ClientHandler(Socket socket, Map<String, ConnectedUser> connectedUsers, Queue<Message> messagesQueue)
 		{
 			this.socket = socket;
 			try {
 				this.reader = new DataInputStream(socket.getInputStream());
 				this.writer = new DataOutputStream(socket.getOutputStream());
+				this.database = Database.getInstance();
+				this.connectedUsers = connectedUsers;
+				this.messagesQueue = messagesQueue;
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -115,11 +126,149 @@ public class Serveur
 
 		public void run()
 		{
-			String request = reader.read
+			try {
+				Request request = Request.decodeRequest(reader.readUTF());
+				processRequest(request);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+
+		}
+
+		private void processRequest(Request request) {
+			switch (request.getRequest()) {
+				case "LOG_IN":
+					processLogIn(request);
+					break;
+				case "LOG_OUT":
+					processLogOut(request);
+					break;
+				case "NEW_MESSAGE":
+					processNewMessage(request);
+					break;
+				case "GET_MESSAGES":
+					processMessagesRequest(request);
+					break;
+				default:
+					sendErrorResponse(Map.of("Type", "Wrong request"));
+			}
+		}
+
+		private void processLogIn(Request request) {
+			String username = request.getPayload().get("username");
+			String password = request.getPayload().get("password");
+			String port = request.getPayload().get("listening_port");
+			if (username == null || password == null) {
+				sendErrorResponse(Map.of("Type", "No username"));
+				return;
+			}
+			int listeningClientPort;
+			try {
+				listeningClientPort = Integer.parseInt(port);
+			} catch (NumberFormatException e) {
+				sendErrorResponse(Map.of("Type", "Wrong port format"));
+				return;
+			}
+			if (listeningClientPort < 1025 || listeningClientPort > 49152) {
+				sendErrorResponse(Map.of("Type", "Wrong port number"));
+				return;
+			}
+
+			try {
+				User user = database.getUser(username);
+				if (user.isGoodPassword(password)) {
+					ConnectedUser connectedUser = new ConnectedUser(user, socket.getInetAddress(), listeningClientPort);
+					connectedUsers.put(connectedUser.getToken(), connectedUser);
+					Response response = new Response("OK", Map.of("Token", connectedUser.getToken()));
+					sendResponse(response);
+				}
+			} catch (NoUserException e) {
+				processNewUser(request, username, password, listeningClientPort);
+			}
+		}
+
+		private void processNewUser(Request request, String username, String password, int port) {
+			User user = new User(username, password);
+			try {
+				database.insertNewUser(user);
+			} catch (DatabaseInsertionException e) {
+				sendErrorResponse(Map.of("Type", "Database insertion error"));
+			}
+			ConnectedUser connectedUser = new ConnectedUser(user, socket.getInetAddress(), port);
+			connectedUsers.put(connectedUser.getToken(), connectedUser);
+			Response response = new Response("OK", Map.of("NewUser", "true", "Token",
+					connectedUser.getToken()));
+			sendResponse(response);
+		}
+
+		private void processLogOut(Request request) {
+			String token = request.getToken();
+			ConnectedUser connectedUser = connectedUsers.remove(token);
+			if (connectedUser == null) {
+				sendErrorResponse(Map.of("Type", "Wrong token"));
+			} else {
+				Response response = new Response("OK", Map.of("username", connectedUser.getUserName()));
+				sendResponse(response);
+			}
+		}
+
+		private void processNewMessage(Request request) {
+			ConnectedUser connectedUser = connectedUsers.get(request.getToken());
+			if (connectedUser == null) {
+				sendErrorResponse(Map.of("Type", "Wrong token"));
+			} else {
+				String encodedMessage = request.getPayload().get("Message");
+				if (encodedMessage == null) {
+					sendErrorResponse(Map.of("Type", "No message"));
+					return;
+				}
+				Message message = Message.decodeMessage(encodedMessage);
+				if (message == null) {
+					sendErrorResponse(Map.of("Type", "Wrong message formatting"));
+					return;
+				}
+				messagesQueue.add(message);
+				Response response = new Response("OK", Map.of("username", connectedUser.getUserName()));
+				sendResponse(response);
+			}
+		}
+
+		private void processMessagesRequest(Request request) {
+			ConnectedUser connectedUser = connectedUsers.get(request.getToken());
+			if (connectedUser == null) {
+				sendErrorResponse(Map.of("Type", "Wrong token"));
+			} else {
+				int NUMBER_OF_MESSAGES = 15;
+				List<Message> messages = database.getLastMessages(NUMBER_OF_MESSAGES);
+				HashMap<String, String> payload = new HashMap<>();
+				int i = 0;
+
+				payload.put("size", Integer.toString(messages.size()));
+				for (Message m : messages) {
+					payload.put(Integer.toString(i++), m.encodeMessage());
+				}
+				Response response = new Response("OK", payload);
+				sendResponse(response);
+			}
+		}
+
+		private void sendErrorResponse(Map<String, String> payload) {
+			Response response = new Response("ERROR", payload);
+			sendResponse(response);
+		}
+
+		private void sendResponse(Response response) {
+			try {
+				writer.writeUTF(response.encodeResponse());
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 
-	private class MessageHandler extends Thread
+	private class MessageHandler extends Thread {
+
+	}
 
 	public static void main(String[] args) throws Exception
 	{

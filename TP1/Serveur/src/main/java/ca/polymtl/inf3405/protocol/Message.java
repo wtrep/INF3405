@@ -2,6 +2,7 @@ package ca.polymtl.inf3405.protocol;
 
 import ca.polymtl.inf3405.exceptions.MessageSizeException;
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 
 import java.time.Instant;
 
@@ -54,8 +55,11 @@ final public class Message {
 
     public static Message decodeMessage(String string) {
         Gson gson = new Gson();
-        return gson.fromJson(string, Message.class);
+        try {
+            return gson.fromJson(string, Message.class);
+        } catch (JsonSyntaxException e) {
+            return null;
+        }
     }
-
 
 }
