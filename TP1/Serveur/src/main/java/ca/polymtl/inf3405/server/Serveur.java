@@ -10,56 +10,45 @@ import java.util.*;
 
 public class Serveur
 {
-    	private volatile static Map<String, User> connectedClients;
-    	private volatile static Queue<Message> messagesQueue;
-	private static ServerSocket listener;
-	public static List<ClientHandler> clients;
-	
-	/*
-	 * Application serveur
-	 */
-	
+	private volatile static Map<String, User> connectedClients;
+    private volatile static Queue<Message> messagesQueue;
+    private static ServerSocket listener;
+    public static List<ClientHandler> clients;
+
 	private static String validationIP(BufferedReader reader) {
-		//Demande IP
 		System.out.println("Veuillez entrez l'adresse IP du serveur : ");
-		//Initialisation de variable
 		String serverAddress = "";
 		boolean valid = false;
 		String IP_PATTERN = "^((0|1\\d?\\d?|2[0-4]?\\d?|25[0-5]?|[3-9]\\d?)\\.){3}(0|1\\d?\\d?|2[0-4]?\\d?|25[0-5]?|[3-9]\\d?)$";
+
 		while (!valid) {
-			//Donnees entree par la console
-			try {	
+			try {
 				serverAddress = reader.readLine();
 			}
 			catch(IOException e) {
 				e.printStackTrace();
 			}
-			//Vérification de la validité des données
 			if(serverAddress.matches(IP_PATTERN)) {
 				break;
 			}
 			System.out.println("Adresse IP entree invalide! Veuillez entre une adresse du format XXX.XXX.XXX.XXX : ");
 		}
-		
 		return serverAddress;
 	}
 
 	private static int validationPort(BufferedReader reader) {
-		//Demande Port
 		System.out.println("Veuillez entrez le port d'ecoute du serveur : ");
 		int serverPort = 0;
 		while( serverPort<5000 || serverPort>5050 ) 		
 		{
-			//Donnees entrees par la console
 			try {
 				serverPort = Integer.parseInt(reader.readLine());
 			}
 			catch(Exception e) {
 				serverPort = 0;
 			}
-			if (serverPort>=5000 && serverPort<=5050) //Pour ne pas afficher message d'erreur si correct
+			if (serverPort>=5000 && serverPort<=5050)
 				break;
-			//Message d'erreur
 			System.out.println("Port invalide! (Veuillez entrez un nombre entre 5000 et 5050) ");
 		}
 		
@@ -68,14 +57,9 @@ public class Serveur
 
 	public static void main(String[] args) throws Exception
 	{
-		//Canal d'entree de la console
 		BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-		//Validation adresse IP
 		String serverAddress = validationIP(reader);
-		//Validation port
 		int serverPort= validationPort(reader);
-//		String serverAddress = "127.0.0.1";
-//		int serverPort = 5000;		
 		
 		String username ="username";
 
@@ -83,23 +67,15 @@ public class Serveur
 		listener.setReuseAddress(true);
 		InetAddress serverIP = InetAddress.getByName(serverAddress);
 		
-		//Association de l'adresse et du port a la connexion
 		listener.bind(new InetSocketAddress(serverIP, serverPort));
-
 		System.out.format("The server is running on %s:%d%n", serverAddress, serverPort);
 		
 		
 		try
 		{
-			/*
-			 * A chaque fois qu'un nouveau client se connecte, on execute la fonction
-			 * Run() de l'objet ClientHandler
-			 */
 			clients = new ArrayList<>();
 			while(true)
 			{
-				//Important: la fonction accept() est bloquante : attend qu'un prochain client se connecte
-				// Une nouvelle connexion	
 				ClientHandler client = new ClientHandler(listener.accept(), username);
 				clients.add(client);
 				System.out.println("Client added");
@@ -108,15 +84,10 @@ public class Serveur
 		}
 		finally
 		{
-			//Fermeture du socket d'ecoute
 			listener.close();
 		}
 	}
 
-	/*
-	 * Un thread qui se charge de traiter la demande de chaque client
-	 * sur un socket particulier
-	 */
 	private static class ClientHandler extends Thread
 	{
 		private Socket socket;
@@ -139,10 +110,7 @@ public class Serveur
 				isLoggedIn=false;
 			}
 		}
-		
-		/* 
-		 * Un thread qui se charge d'un client.
-		 */
+
 		public void run()
 		{
 			String received;
