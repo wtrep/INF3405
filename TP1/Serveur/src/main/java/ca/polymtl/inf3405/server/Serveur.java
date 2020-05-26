@@ -15,7 +15,24 @@ public class Serveur
     private static ServerSocket listener;
     public static List<ClientHandler> clients;
 
-	private static String validationIP(BufferedReader reader) {
+    private void initiateServer() {
+		BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+		String serverAddress = validateIP(reader);
+		int serverPort= validatePort(reader);
+
+		try {
+			listener = new ServerSocket();
+			listener.setReuseAddress(true);
+			InetAddress serverIP = InetAddress.getByName(serverAddress);
+			listener.bind(new InetSocketAddress(serverIP, serverPort));
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		System.out.format("The server is running on %s:%d%n", serverAddress, serverPort);
+    }
+
+	private String validateIP(BufferedReader reader) {
 		System.out.println("Veuillez entrez l'adresse IP du serveur : ");
 		String serverAddress = "";
 		boolean valid = false;
@@ -28,7 +45,7 @@ public class Serveur
 			catch(IOException e) {
 				e.printStackTrace();
 			}
-			if(serverAddress.matches(IP_PATTERN)) {
+			if (serverAddress.matches(IP_PATTERN)) {
 				break;
 			}
 			System.out.println("Adresse IP entree invalide! Veuillez entre une adresse du format XXX.XXX.XXX.XXX : ");
@@ -36,10 +53,10 @@ public class Serveur
 		return serverAddress;
 	}
 
-	private static int validationPort(BufferedReader reader) {
+	private int validatePort(BufferedReader reader) {
 		System.out.println("Veuillez entrez le port d'ecoute du serveur : ");
 		int serverPort = 0;
-		while( serverPort<5000 || serverPort>5050 ) 		
+		while (serverPort<5000 || serverPort>5050)
 		{
 			try {
 				serverPort = Integer.parseInt(reader.readLine());
@@ -55,40 +72,34 @@ public class Serveur
 		return serverPort;
 	}
 
-	public static void main(String[] args) throws Exception
-	{
-		BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-		String serverAddress = validationIP(reader);
-		int serverPort= validationPort(reader);
-		
-		String username ="username";
+	private void run() {
+		initiateServer();
 
-		listener = new ServerSocket();
-		listener.setReuseAddress(true);
-		InetAddress serverIP = InetAddress.getByName(serverAddress);
-		
-		listener.bind(new InetSocketAddress(serverIP, serverPort));
-		System.out.format("The server is running on %s:%d%n", serverAddress, serverPort);
-		
-		
 		try
 		{
 			clients = new ArrayList<>();
 			while(true)
 			{
-				ClientHandler client = new ClientHandler(listener.accept(), username);
+				ClientHandler client = new ClientHandler(listener.accept());
 				clients.add(client);
 				System.out.println("Client added");
 				client.start();
 			}
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 		finally
 		{
-			listener.close();
+			try {
+				listener.close();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
 		}
 	}
 
-	private static class ClientHandler extends Thread
+	private class ClientHandler extends Thread
 	{
 		private Socket socket;
 		private String username;
@@ -96,7 +107,7 @@ public class Serveur
 		private BufferedWriter writer;
 		boolean isLoggedIn;
 		
-		public ClientHandler(Socket socket,String username)
+		public ClientHandler(Socket socket)
 		{
 			this.socket = socket;
 			this.username = username;
@@ -160,4 +171,9 @@ public class Serveur
 		}
 	}
 
+	public static void main(String[] args) throws Exception
+	{
+		Serveur serveur = new Serveur();
+		serveur.run();
+	}
 }
