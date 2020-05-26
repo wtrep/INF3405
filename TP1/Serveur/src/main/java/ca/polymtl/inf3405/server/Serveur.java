@@ -77,12 +77,9 @@ public class Serveur
 
 		try
 		{
-			clients = new ArrayList<>();
 			while(true)
 			{
 				ClientHandler client = new ClientHandler(listener.accept());
-				clients.add(client);
-				System.out.println("Client added");
 				client.start();
 			}
 		} catch (Exception e) {
@@ -102,74 +99,27 @@ public class Serveur
 	private class ClientHandler extends Thread
 	{
 		private Socket socket;
-		private String username;
-		private BufferedReader reader;
-		private BufferedWriter writer;
-		boolean isLoggedIn;
+		private DataInputStream reader;
+		private DataOutputStream writer;
 		
 		public ClientHandler(Socket socket)
 		{
 			this.socket = socket;
-			this.username = username;
-			System.out.println("New connection with " + username + " at " + socket);
-			isLoggedIn=true;
 			try {
-				this.reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-				this.writer = new BufferedWriter(new PrintWriter(socket.getOutputStream()));
+				this.reader = new DataInputStream(socket.getInputStream());
+				this.writer = new DataOutputStream(socket.getOutputStream());
 			} catch (IOException e) {
-				System.out.println("Erreur lors de la connexion, veuillez reessayer!");
-				isLoggedIn=false;
+				e.printStackTrace();
 			}
 		}
 
 		public void run()
 		{
-			String received;
-			DateTimeFormatter timeFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd k:m:s");
-			while(isLoggedIn) {
-				try {
-					//Recevoir messages
-					received = reader.readLine();
-					
-					//TODO Transforme received into message
-					String message = "["+username+" - "+"IPaddress:Port"+" - "+LocalDateTime.now().format(timeFormat)+"]:"+received;
-					
-					//Afficher sur console serveur
-					System.out.println(message);
-					
-					//Pour tous les clients, TODO :ajouter filtre par apres
-					for(ClientHandler client : Serveur.clients) {
-						client.getOutput().write(message);
-						client.getOutput().newLine();
-						client.getOutput().flush();
-					}
-					
-					if(received == "logout") {
-						isLoggedIn=false;
-					}
-					
-					
-					
-				} catch (Exception e) {
-					System.out.println("La connexion a ete coupee avec " + this.username + "!");
-					isLoggedIn=false;
-					clients.remove(this);
-				}
-			}
-			try {
-				//Relacher les ressources
-				this.reader.close();
-				this.writer.close();
-				this.socket.close();
-			} catch (IOException e ){
-				System.out.println("Erreur dans la fermeture des buffers!");
-			}
-		}		
-	
-		private BufferedWriter getOutput() {
-			return writer;
+			String request = reader.read
 		}
 	}
+
+	private class MessageHandler extends Thread
 
 	public static void main(String[] args) throws Exception
 	{
