@@ -9,14 +9,14 @@ import ca.polymtl.inf3405.protocol.Response;
 
 import java.io.*;
 import java.net.*;
-import java.time.*;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentMap;
 
 public class Serveur
 {
-	private volatile static Map<String, ConnectedUser> connectedUsers;
-    private volatile static Queue<Message> messagesQueue;
+	private volatile static ConcurrentMap<String, ConnectedUser> connectedUsers;
+    private volatile static BlockingQueue<Message> messagesQueue;
     private static ServerSocket listener;
     public static List<ClientHandler> clients;
 
@@ -107,10 +107,11 @@ public class Serveur
 		private DataInputStream reader;
 		private DataOutputStream writer;
 		private Database database;
-		private volatile Map<String, ConnectedUser> connectedUsers;
-		private volatile Queue<Message> messagesQueue;
+		private volatile ConcurrentMap<String, ConnectedUser> connectedUsers;
+		private volatile BlockingQueue<Message> messagesQueue;
 		
-		public ClientHandler(Socket socket, Map<String, ConnectedUser> connectedUsers, Queue<Message> messagesQueue)
+		public ClientHandler(Socket socket, ConcurrentMap<String, ConnectedUser> connectedUsers,
+							 BlockingQueue<Message> messagesQueue)
 		{
 			this.socket = socket;
 			try {
@@ -266,8 +267,60 @@ public class Serveur
 		}
 	}
 
-	private class MessageHandler extends Thread {
+	private class MessageHandler implements Runnable {
+		private volatile ConcurrentMap<String, ConnectedUser> connectedUsers;
+		private volatile BlockingQueue<Message> messagesQueue;
+		private volatile Boolean running = true;
 
+		public MessageHandler(ConcurrentMap<String, ConnectedUser> connectedUsers,
+							  BlockingQueue<Message> messagesQueue) {
+			this.connectedUsers = connectedUsers;
+			this.messagesQueue = messagesQueue;
+		}
+
+		public void run() {
+			Message message;
+			while (running) {
+				try {
+					message = messagesQueue.take();
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+
+		private void sendMessage(Message message) {
+			Map<String, ConnectedUser> users = Collections.unmodifiableMap(connectedUsers);
+			users.forEach((k,u) -> {
+				MessageSender sender = new MessageSender(u, message);
+				sender.run();
+			});
+			// TODO : Print message to console
+		}
+
+		public void stop() {
+			running = false;
+		}
+	}
+
+	private class MessageSender extends Thread {
+    	private final ConnectedUser user;
+    	private final Message message;
+
+    	MessageSender(ConnectedUser user, Message message) {
+    		this.user = user;
+    		this.message = message;
+		}
+
+    	public void run() {
+			try {
+				Socket socket = new Socket(user.getUserAddress(), user.getUserPort());
+				DataOutputStream output = new DataOutputStream(socket.getOutputStream());
+				output.writeUTF(message.encodeMessage());
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
 	public static void main(String[] args) throws Exception
