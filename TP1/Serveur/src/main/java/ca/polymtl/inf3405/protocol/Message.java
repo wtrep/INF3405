@@ -10,7 +10,7 @@ final public class Message {
     private final String senderName;
     private final String senderIp;
     private final Integer senderPort;
-    private final Instant time;
+    private final String time;
     private final String message;
 
     private static final int MAXIMUM_SIZE = 200;
@@ -24,7 +24,7 @@ final public class Message {
         this.senderName = senderName;
         this.senderIp = senderIp;
         this.senderPort = senderPort;
-        this.time = time;
+        this.time = time.toString();
         this.message = message;
     }
 
@@ -40,7 +40,7 @@ final public class Message {
         return senderPort;
     }
 
-    public Instant getTime() {
+    public String getTime() {
         return time;
     }
 

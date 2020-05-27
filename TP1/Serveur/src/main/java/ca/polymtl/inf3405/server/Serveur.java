@@ -41,7 +41,7 @@ public class Serveur
     }
 
 	private String validateIP(BufferedReader reader) {
-		System.out.println("Veuillez entrez l'adresse IP du serveur : ");
+		System.out.print("Veuillez entrez l'adresse IP du serveur : ");
 		String serverAddress = "";
 		boolean valid = false;
 		String IP_PATTERN = "^((0|1\\d?\\d?|2[0-4]?\\d?|25[0-5]?|[3-9]\\d?)\\.){3}(0|1\\d?\\d?|2[0-4]?\\d?|25[0-5]?|[3-9]\\d?)$";
@@ -56,14 +56,14 @@ public class Serveur
 			if (serverAddress.matches(IP_PATTERN)) {
 				valid = true;
 			} else {
-				System.out.println("Adresse IP entree invalide! Veuillez entre une adresse du format XXX.XXX.XXX.XXX : ");
+				System.out.print("Adresse IP entree invalide! Veuillez entre une adresse du format XXX.XXX.XXX.XXX : ");
 			}
 		}
 		return serverAddress;
 	}
 
 	private int validatePort(BufferedReader reader) {
-		System.out.println("Veuillez entrez le port d'ecoute du serveur : ");
+		System.out.print("Veuillez entrez le port d'ecoute du serveur : ");
 		int serverPort = 0;
 		boolean valid = false;
 		while (!valid)
@@ -77,7 +77,7 @@ public class Serveur
 			if (serverPort >= 5000 && serverPort<=5050) {
 				valid = true;
 			} else {
-				System.out.println("Port invalide! (Veuillez entrez un nombre entre 5000 et 5050) ");
+				System.out.print("Port invalide! (Veuillez entrez un nombre entre 5000 et 5050) ");
 			}
 		}
 		

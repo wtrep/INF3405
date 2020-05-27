@@ -57,7 +57,7 @@ public class Client {
     }
 
     private String validateIP(BufferedReader reader) {
-        System.out.println("Veuillez entrez l'adresse IP du serveur : ");
+        System.out.print("Veuillez entrez l'adresse IP du serveur : ");
         String serverAddress = "";
         boolean valid = false;
         String IP_PATTERN = "^((0|1\\d?\\d?|2[0-4]?\\d?|25[0-5]?|[3-9]\\d?)\\.){3}(0|1\\d?\\d?|2[0-4]?\\d?|25[0-5]?|[3-9]\\d?)$";
@@ -72,14 +72,14 @@ public class Client {
             if (serverAddress.matches(IP_PATTERN)) {
                 valid = true;
             } else {
-                System.out.println("Adresse IP entree invalide! Veuillez entre une adresse du format XXX.XXX.XXX.XXX : ");
+                System.out.print("Adresse IP entree invalide! Veuillez entre une adresse du format XXX.XXX.XXX.XXX : ");
             }
         }
         return serverAddress;
     }
 
     private int validatePort(BufferedReader reader) {
-        System.out.println("Veuillez entrez le port d'ecoute du serveur : ");
+        System.out.print("Veuillez entrez le port d'ecoute du serveur : ");
         int serverPort = 0;
         boolean valid = false;
         while (!valid)
@@ -93,7 +93,7 @@ public class Client {
             if (serverPort >= 5000 && serverPort<=5050) {
                 valid = true;
             } else {
-                System.out.println("Port invalide! (Veuillez entrez un nombre entre 5000 et 5050) ");
+                System.out.print("Port invalide! (Veuillez entrez un nombre entre 5000 et 5050) ");
             }
         }
 
@@ -145,8 +145,8 @@ public class Client {
             Response response = Response.decodeResponse(serverInputStream.readUTF());
             int size = Integer.parseInt(response.getPayload().get("size"));
             Message message;
-            for (int i = 0; i < size; ++i) {
-                message = Message.decodeMessage(response.getPayload().get(Integer.toString(i)));
+            for (int i = 1; i <= size; ++i) {
+                message = Message.decodeMessage(response.getPayload().get(Integer.toString(size-i)));
                 if (message != null) {
                     System.out.println(message.toConsole());
                 }
@@ -193,14 +193,12 @@ public class Client {
                     DataOutputStream outputStream = new DataOutputStream(serverSocket.getOutputStream());
                     DataInputStream inputStream = new DataInputStream(serverSocket.getInputStream());
 
-                    //TODO Former message
                     try {
                         message = new Message(user, serverSocket.getInetAddress().toString(), serverSocket.getLocalPort(),
                                 Instant.now(), inputMessage);
                         request = new Request("NEW_MESSAGE", token, Map.of("Message", message.encodeMessage()));
                         outputStream.writeUTF(request.encodeRequest());
                         Response response = Response.decodeResponse(inputStream.readUTF());
-                        System.out.println(response.getResponse());
                     } catch (MessageSizeException e) {
                         System.out.println("Erreur: la taille du message doit être de 200 caractères ou moins.");
                     } finally {
