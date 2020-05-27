@@ -10,15 +10,18 @@ import ca.polymtl.inf3405.protocol.Response;
 import java.io.*;
 import java.net.*;
 import java.util.*;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.*;
 
 public class Serveur
 {
 	private volatile static ConcurrentMap<String, ConnectedUser> connectedUsers;
     private volatile static BlockingQueue<Message> messagesQueue;
     private static ServerSocket listener;
-    public static List<ClientHandler> clients;
+
+    public Serveur() {
+    	connectedUsers = new ConcurrentHashMap<>();
+    	messagesQueue = new LinkedBlockingQueue<>();
+	}
 
     private void initiateServer() {
 		BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
@@ -51,9 +54,10 @@ public class Serveur
 				e.printStackTrace();
 			}
 			if (serverAddress.matches(IP_PATTERN)) {
-				break;
+				valid = true;
+			} else {
+				System.out.println("Adresse IP entree invalide! Veuillez entre une adresse du format XXX.XXX.XXX.XXX : ");
 			}
-			System.out.println("Adresse IP entree invalide! Veuillez entre une adresse du format XXX.XXX.XXX.XXX : ");
 		}
 		return serverAddress;
 	}
@@ -61,7 +65,8 @@ public class Serveur
 	private int validatePort(BufferedReader reader) {
 		System.out.println("Veuillez entrez le port d'ecoute du serveur : ");
 		int serverPort = 0;
-		while (serverPort<5000 || serverPort>5050)
+		boolean valid = false;
+		while (!valid)
 		{
 			try {
 				serverPort = Integer.parseInt(reader.readLine());
@@ -69,9 +74,11 @@ public class Serveur
 			catch(Exception e) {
 				serverPort = 0;
 			}
-			if (serverPort>=5000 && serverPort<=5050)
-				break;
-			System.out.println("Port invalide! (Veuillez entrez un nombre entre 5000 et 5050) ");
+			if (serverPort >= 5000 && serverPort<=5050) {
+				valid = true;
+			} else {
+				System.out.println("Port invalide! (Veuillez entrez un nombre entre 5000 et 5050) ");
+			}
 		}
 		
 		return serverPort;
@@ -79,6 +86,8 @@ public class Serveur
 
 	private void run() {
 		initiateServer();
+		MessageHandler messageHandler = new MessageHandler(connectedUsers, messagesQueue);
+		messageHandler.start();
 
 		try
 		{
@@ -97,7 +106,6 @@ public class Serveur
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
-
 		}
 	}
 
@@ -130,10 +138,9 @@ public class Serveur
 			try {
 				Request request = Request.decodeRequest(reader.readUTF());
 				processRequest(request);
-			} catch (IOException e) {
+			} catch (Exception e) {
 				e.printStackTrace();
 			}
-
 		}
 
 		private void processRequest(Request request) {
@@ -183,13 +190,17 @@ public class Serveur
 					Response response = new Response("OK", Map.of("Token", connectedUser.getToken()));
 					sendResponse(response);
 				}
+				else {
+					sendErrorResponse(Map.of("Type", "Wrong password"));
+				}
 			} catch (NoUserException e) {
 				processNewUser(request, username, password, listeningClientPort);
 			}
 		}
 
 		private void processNewUser(Request request, String username, String password, int port) {
-			User user = new User(username, password);
+			User user = new User(username);
+			user.setPassword(password);
 			try {
 				database.insertNewUser(user);
 			} catch (DatabaseInsertionException e) {
@@ -261,21 +272,23 @@ public class Serveur
 		private void sendResponse(Response response) {
 			try {
 				writer.writeUTF(response.encodeResponse());
+				socket.close();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 		}
 	}
 
-	private class MessageHandler implements Runnable {
+	private class MessageHandler extends Thread {
 		private volatile ConcurrentMap<String, ConnectedUser> connectedUsers;
 		private volatile BlockingQueue<Message> messagesQueue;
 		private volatile Boolean running = true;
-
+		private Database database;
 		public MessageHandler(ConcurrentMap<String, ConnectedUser> connectedUsers,
 							  BlockingQueue<Message> messagesQueue) {
 			this.connectedUsers = connectedUsers;
 			this.messagesQueue = messagesQueue;
+			database = Database.getInstance();
 		}
 
 		public void run() {
@@ -283,6 +296,7 @@ public class Serveur
 			while (running) {
 				try {
 					message = messagesQueue.take();
+					sendMessage(message);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
@@ -293,12 +307,17 @@ public class Serveur
 			Map<String, ConnectedUser> users = Collections.unmodifiableMap(connectedUsers);
 			users.forEach((k,u) -> {
 				MessageSender sender = new MessageSender(u, message);
-				sender.run();
+				sender.start();
 			});
-			// TODO : Print message to console
+			try {
+				database.insertNewMessage(message);
+			} catch (DatabaseInsertionException e) {
+				e.printStackTrace();
+			}
+			System.out.println(message.getMessage());
 		}
 
-		public void stop() {
+		public void terminate() {
 			running = false;
 		}
 	}

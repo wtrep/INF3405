@@ -1,158 +1,257 @@
 package client;
 
+import exceptions.MessageSizeException;
+import protocol.Message;
+import protocol.Request;
+import protocol.Response;
+
 import java.net.*;
 import java.io.*;
+import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.CyclicBarrier;
 
 public class Client {
-    private static Socket socket;
+    private ServerSocket listeningSocket;
+    private int listeningPort;
+    private Socket serverSocket;
+    private String serverAddress;
+    private int serverPort;
+    private String token;
+    private String user;
 
-    /*
-     * Application client
-     */
+    public Client() {
+        try {
+            listeningSocket = new ServerSocket(0);
+            listeningPort = listeningSocket.getLocalPort();
+            listeningSocket.setReuseAddress(true);
+            serverSocket = null;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
-    private static String validationIP(BufferedReader reader) {
-        //Demande IP
+    private String getUser(BufferedReader reader) {
+        System.out.print("Veuillez entrer le nom d'utilisateur : ");
+        String username;
+        try {
+            username = reader.readLine();
+            return username;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return "";
+    }
+
+    private String getPassword(BufferedReader reader) {
+        System.out.print("Veuillez entrer le mot de passe : ");
+        String password;
+        try {
+            password = reader.readLine();
+            return password;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return "";
+    }
+
+    private String validateIP(BufferedReader reader) {
         System.out.println("Veuillez entrez l'adresse IP du serveur : ");
-        //Initialisation de variable
         String serverAddress = "";
+        boolean valid = false;
         String IP_PATTERN = "^((0|1\\d?\\d?|2[0-4]?\\d?|25[0-5]?|[3-9]\\d?)\\.){3}(0|1\\d?\\d?|2[0-4]?\\d?|25[0-5]?|[3-9]\\d?)$";
-        while (!serverAddress.matches(IP_PATTERN)) {
-            //Donnees entree par la console
+
+        while (!valid) {
             try {
                 serverAddress = reader.readLine();
             }
             catch(IOException e) {
                 e.printStackTrace();
             }
-            if(!serverAddress.matches(IP_PATTERN))
-                System.out.println("Adresse IP entrée invalide! Veuillez entre une adresse du format XXX.XXX.XXX.XXX : ");
+            if (serverAddress.matches(IP_PATTERN)) {
+                valid = true;
+            } else {
+                System.out.println("Adresse IP entree invalide! Veuillez entre une adresse du format XXX.XXX.XXX.XXX : ");
+            }
         }
-        
         return serverAddress;
     }
 
-    private static int validationPort(BufferedReader reader) {
-        //Demande Port
-        System.out.println("Veuillez entrez le port d'écoute du serveur : ");
+    private int validatePort(BufferedReader reader) {
+        System.out.println("Veuillez entrez le port d'ecoute du serveur : ");
         int serverPort = 0;
-        while( serverPort<5000 || serverPort>5050 )
+        boolean valid = false;
+        while (!valid)
         {
-            //Donnees entrées par la console
             try {
                 serverPort = Integer.parseInt(reader.readLine());
             }
             catch(Exception e) {
                 serverPort = 0;
             }
-            if (!(serverPort<5000 || serverPort>5050))
+            if (serverPort >= 5000 && serverPort<=5050) {
+                valid = true;
+            } else {
                 System.out.println("Port invalide! (Veuillez entrez un nombre entre 5000 et 5050) ");
+            }
         }
 
         return serverPort;
     }
 
-    private static class SendMessage extends Thread {
-        BufferedReader userIn; 
-        BufferedWriter writer;  
-        boolean connected;
+    private void connectToServer(String username, String password, int listeningPort, BufferedReader reader) {
+        boolean connected = false;
+        try {
+            while (!connected) {
+                serverSocket = new Socket(serverAddress, serverPort);
+                DataOutputStream serverOutputStream = new DataOutputStream(serverSocket.getOutputStream());
+                serverOutputStream.writeUTF(new Request("LOG_IN", "", Map.of("username", username,
+                        "password", password, "listening_port", Integer.toString(listeningPort))).encodeRequest());
 
-        public SendMessage(Socket socket) {
-            userIn = new BufferedReader(new InputStreamReader(System.in));
-            connected = true;
-            try {
-                writer = new BufferedWriter(new PrintWriter(socket.getOutputStream()));
-            } catch (IOException e) {
-                System.out.println("Le socket n'est pas connecté veuillez réessayer.");
-                connected = false;
+                DataInputStream serverInputStream = new DataInputStream(serverSocket.getInputStream());
+                Response response = Response.decodeResponse(serverInputStream.readUTF());
+
+                if (response.getResponse().equals("OK")) {
+                    String token = response.getPayload().get("Token");
+                    if (token != null) {
+                        this.token = token;
+                        connected = true;
+                    }
+                    serverSocket.close();
+                }
+                else {
+                    System.out.println("Error: " + response.getPayload().get("Type"));
+                    serverSocket.close();
+                    serverSocket = new Socket(serverAddress, serverPort);
+                    username = getUser(reader);
+                    password = getPassword(reader);
+                }
             }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void printLastMessages() {
+        try {
+            serverSocket = new Socket(serverAddress, serverPort);
+            DataOutputStream serverOutputStream = new DataOutputStream(serverSocket.getOutputStream());
+            DataInputStream serverInputStream = new DataInputStream(serverSocket.getInputStream());
+
+            Request resquest = new Request("GET_MESSAGES", token, new HashMap<>());
+            serverOutputStream.writeUTF(resquest.encodeRequest());
+
+            Response response = Response.decodeResponse(serverInputStream.readUTF());
+            int size = Integer.parseInt(response.getPayload().get("size"));
+            Message message;
+            for (int i = 0; i < size; ++i) {
+                message = Message.decodeMessage(response.getPayload().get(Integer.toString(i)));
+                if (message != null) {
+                    System.out.println(message.toConsole());
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void run() {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+        serverAddress = validateIP(reader);
+        serverPort = validatePort(reader);
+        user = getUser(reader);
+        String password = getPassword(reader);
+
+        ReadMessage readMessage = new ReadMessage();
+        readMessage.start();
+
+        connectToServer(user, password, listeningSocket.getLocalPort(), reader);
+        printLastMessages();
+
+        SendMessage sendMessage = new SendMessage();
+        sendMessage.start();
+    }
+
+
+    private class SendMessage extends Thread {
+        BufferedReader userIn;
+
+        public SendMessage() {
+            userIn = new BufferedReader(new InputStreamReader(System.in));
         }
 
         public void run() {
-            String message;
             String inputMessage;
-            while(true) {
+            Message message;
+            Request request;
+
+            while (true) {
                 try {
-                    //Chercher input
                     inputMessage = userIn.readLine();
+                    serverSocket = new Socket(serverAddress, serverPort);
+                    DataOutputStream outputStream = new DataOutputStream(serverSocket.getOutputStream());
+                    DataInputStream inputStream = new DataInputStream(serverSocket.getInputStream());
 
                     //TODO Former message
-                    message = inputMessage;
-
-                    //Envoyer le message
-                    writer.write(message);
-                    writer.newLine();
-                    writer.flush();
+                    try {
+                        message = new Message(user, serverSocket.getInetAddress().toString(), serverSocket.getLocalPort(),
+                                Instant.now(), inputMessage);
+                        request = new Request("NEW_MESSAGE", token, Map.of("Message", message.encodeMessage()));
+                        outputStream.writeUTF(request.encodeRequest());
+                        Response response = Response.decodeResponse(inputStream.readUTF());
+                        System.out.println(response.getResponse());
+                    } catch (MessageSizeException e) {
+                        System.out.println("Erreur: la taille du message doit être de 200 caractères ou moins.");
+                    } finally {
+                        serverSocket.close();
+                    }
                 }
                 catch(IOException e) {
                     System.out.println("Erreur dans l'envoi du message! Déconnexion.");
-                    connected = false;
                 }
             }
         }
     }
 
-    private static class ReadMessage extends Thread {
-        BufferedReader receiver;
-        boolean connected;
+    private class ReadMessage extends Thread {
+        private boolean running;
 
-        public ReadMessage(Socket socket) {
-            connected = true;
-            try {
-                receiver = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            } catch (IOException e) {
-                System.out.println("Le socket n'est pas connecté veuillez réessayer.");
-                connected = false;
-            }
+        public ReadMessage() {
+            running = true;
         }
 
         public void run() {
-            String message;
-            while(connected) {
+            while (running) {
                 try {
-                    //Chercher le message
-                    message = receiver.readLine();
-
-                    //Afficher le message
-                    System.out.println(message);
-                }
-                catch(IOException e) {
-                    System.out.println("Erreur dans la réception du message! Déconnexion.");
-                    connected = false;
+                    Socket currentServerSocket = listeningSocket.accept();
+                    DataInputStream inputStream = new DataInputStream(currentServerSocket.getInputStream());
+                    Message message = Message.decodeMessage(inputStream.readUTF());
+                    if (message != null) {
+                        System.out.println(message.toConsole());
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                } finally {
+                    try{
+                        listeningSocket.close();
+                        listeningSocket = new ServerSocket(listeningPort);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
+        }
+
+        public void terminate() {
+            running = false;
         }
     }
 
 
     public static void main(String[] args) throws Exception
     {
-        //Issue #11 : Saisie des paramètres du serveur (adresse IP, port d'écoute entre 5000 et 5050)
-        //Canal d'entree de la console
-        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-
-        //Addresse et port du serveur
-        String serverAddress = validationIP(reader);
-        int port= validationPort(reader);
-
-        //TEST pour receiveMessage(socket)
-        //Creation d'une nouvelle connexion avec le serveur
-        socket = new Socket(serverAddress, port);
-//		BufferedReader serverReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        try {
-            //Écriture, reception
-            SendMessage send = new SendMessage(socket);
-            send.start();
-            ReadMessage read = new ReadMessage(socket);
-            read.start();
-            //Attendre que les threads finissent
-            send.join();
-            read.join();
-        }
-        finally {
-            System.out.println("Tu as été déconnecté du serveur!");
-
-            //Fermeture de la connexion avec le serveur
-            socket.close();
-        }
+        Client client = new Client();
+        client.run();
     }
 }
