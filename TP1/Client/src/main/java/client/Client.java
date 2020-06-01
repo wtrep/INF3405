@@ -85,7 +85,11 @@ public class Client {
             if (response.getResponse().equals("OK")) {
                 return response.getPayload();
             } else {
-                System.out.println("Error: " + response.getPayload().get("Type"));
+                if (response.getPayload().get("Type").matches("Wrong password")) {
+                    System.out.println("Erreur dans la saisie du mot de passe");
+                } else {
+                    System.out.println("Error: " + response.getPayload().get("Type"));
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
