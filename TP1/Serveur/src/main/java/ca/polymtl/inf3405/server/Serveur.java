@@ -314,7 +314,15 @@ public class Serveur
 			} catch (DatabaseInsertionException e) {
 				e.printStackTrace();
 			}
-			System.out.println(message.getMessage());
+			String fancyPrint = String.format(
+					"[%s - %s:%d - %s]: %s",
+					message.getSenderName(),
+					message.getSenderIp(),
+					message.getSenderPort(),
+					message.getTime(),
+					message.getMessage()
+			);
+			System.out.println(fancyPrint);
 		}
 
 		public void terminate() {
