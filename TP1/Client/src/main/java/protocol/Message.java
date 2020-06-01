@@ -4,7 +4,10 @@ import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import exceptions.MessageSizeException;
 
+import javax.swing.text.StyleContext;
+import java.text.SimpleDateFormat;
 import java.time.Instant;
+import java.util.Date;
 
 final public class Message {
     private final String senderName;
@@ -12,6 +15,8 @@ final public class Message {
     private final Integer senderPort;
     private final String time;
     private final String message;
+    protected static String pattern = "yyyy-MM-dd@HH:mm:ss";
+    protected static SimpleDateFormat simpleDateFormat = new SimpleDateFormat(pattern);
 
     private static final int MAXIMUM_SIZE = 200;
 
@@ -24,7 +29,7 @@ final public class Message {
         this.senderName = senderName;
         this.senderIp = senderIp;
         this.senderPort = senderPort;
-        this.time = Instant.now().toString();
+        this.time = simpleDateFormat.format(new Date());
         this.message = message;
     }
 
