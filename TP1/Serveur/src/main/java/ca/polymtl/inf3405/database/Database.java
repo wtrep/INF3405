@@ -3,6 +3,7 @@ package ca.polymtl.inf3405.database;
 import ca.polymtl.inf3405.protocol.Message;
 import ca.polymtl.inf3405.server.User;
 import ca.polymtl.inf3405.exceptions.*;
+
 import java.sql.*;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -20,20 +21,20 @@ public class Database {
     private Database() {
         Connection connection = null;
         try {
-            connection = DriverManager.getConnection("jdbc:sqlite:"+path);
+            connection = DriverManager.getConnection("jdbc:sqlite:" + path);
             Statement statement = connection.createStatement();
             statement.setQueryTimeout(30);
 
             statement.executeUpdate(createUsersQuery);
             statement.executeUpdate(createMessagesQuery);
-        } catch(SQLException e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         } finally {
             try {
                 if (connection != null) {
                     connection.close();
                 }
-            } catch(SQLException e) {
+            } catch (SQLException e) {
                 e.printStackTrace();
             }
         }
@@ -58,8 +59,8 @@ public class Database {
             statement.setQueryTimeout(30);
 
             statement.executeUpdate("INSERT OR IGNORE INTO messages (sender_name, sender_ip, sender_port, time, message) " +
-                    "VALUES (" + String.join(",", "\""+m.getSenderName()+"\"", "\""+m.getSenderIp()+"\"",
-                    "\""+m.getSenderPort().toString()+"\"", "\""+m.getTime().toString()+"\"", "\""+m.getMessage()+"\"") + ")");
+                    "VALUES (" + String.join(",", "\"" + m.getSenderName() + "\"", "\"" + m.getSenderIp() + "\"",
+                    "\"" + m.getSenderPort().toString() + "\"", "\"" + m.getTime().toString() + "\"", "\"" + m.getMessage() + "\"") + ")");
         } catch (SQLException e) {
             throw new DatabaseInsertionException(e.getMessage());
         } finally {
@@ -80,7 +81,7 @@ public class Database {
             statement.setQueryTimeout(30);
 
             statement.executeUpdate("INSERT OR IGNORE INTO users (username, hash) VALUES (" +
-                    String.join(",", "\""+u.getUserName()+"\"", "\""+u.getPasswordHash()+"\"") + ");");
+                    String.join(",", "\"" + u.getUserName() + "\"", "\"" + u.getPasswordHash() + "\"") + ");");
         } catch (SQLException e) {
             throw new DatabaseInsertionException(e.getMessage());
         } finally {

@@ -68,7 +68,7 @@ final public class Message {
     }
 
     public String toConsole() {
-        return "["+senderName+"]: " + message;
+        return "[" + senderName + "]: " + message;
     }
 
 }
