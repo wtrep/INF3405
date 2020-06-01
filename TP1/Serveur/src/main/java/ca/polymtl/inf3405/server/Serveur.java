@@ -38,7 +38,6 @@ public class Serveur extends Thread
 			InetAddress serverIP = InetAddress.getByName(serverAddress);
 			listener.bind(new InetSocketAddress(serverIP, serverPort));
 		} catch (Exception e) {
-			e.printStackTrace();
 		}
 
 		System.out.format("The server is running on %s:%d%n", serverAddress, serverPort);
@@ -56,7 +55,6 @@ public class Serveur extends Thread
 				serverAddress = reader.readLine();
 			}
 			catch(IOException e) {
-				e.printStackTrace();
 			}
 			if (serverAddress.matches(IP_PATTERN)) {
 				valid = true;
@@ -93,7 +91,6 @@ public class Serveur extends Thread
     	try{
     		listener.close();
 		} catch (IOException e){
-    		e.printStackTrace();
 		}
 	}
 
@@ -116,7 +113,6 @@ public class Serveur extends Thread
 			try {
 				listener.close();
 			} catch (IOException e) {
-				e.printStackTrace();
 			}
 		}
 	}
@@ -141,7 +137,6 @@ public class Serveur extends Thread
 				this.connectedUsers = connectedUsers;
 				this.messagesQueue = messagesQueue;
 			} catch (IOException e) {
-				e.printStackTrace();
 			}
 		}
 
@@ -150,8 +145,7 @@ public class Serveur extends Thread
 			try {
 				Request request = Request.decodeRequest(reader.readUTF());
 				processRequest(request);
-			} catch (Exception e) {
-				e.printStackTrace();
+			} catch (IOException e) {
 			}
 		}
 
@@ -286,7 +280,6 @@ public class Serveur extends Thread
 				writer.writeUTF(response.encodeResponse());
 				socket.close();
 			} catch (IOException e) {
-				e.printStackTrace();
 			}
 		}
 	}
@@ -310,7 +303,6 @@ public class Serveur extends Thread
 					message = messagesQueue.take();
 					sendMessage(message);
 				} catch (InterruptedException e) {
-					e.printStackTrace();
 				}
 			}
 		}
@@ -324,7 +316,6 @@ public class Serveur extends Thread
 			try {
 				database.insertNewMessage(message);
 			} catch (DatabaseInsertionException e) {
-				e.printStackTrace();
 			}
 			String fancyPrint = String.format(
 					"[%s - %s:%d - %s]: %s",
@@ -357,7 +348,6 @@ public class Serveur extends Thread
 				DataOutputStream output = new DataOutputStream(socket.getOutputStream());
 				output.writeUTF(message.encodeMessage());
 			} catch (IOException e) {
-				e.printStackTrace();
 			}
 		}
 	}

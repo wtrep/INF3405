@@ -35,7 +35,6 @@ public class Client {
             try {
                 serverAddress = reader.readLine();
             } catch (IOException e) {
-                e.printStackTrace();
             } finally {
                 if (serverAddress.matches(IP_PATTERN)) {
                     valid = true;
@@ -57,7 +56,6 @@ public class Client {
             } catch (NumberFormatException e) {
                 serverPort = 0;
             } catch (IOException e) {
-                e.printStackTrace();
             } finally {
                 if (serverPort >= 5000 && serverPort <= 5050) {
                     valid = true;
@@ -95,7 +93,6 @@ public class Client {
         } catch (ConnectException e) {
             System.out.println("Erreur: Incapable de joindre le serveur");
         } catch (IOException e) {
-            e.printStackTrace();
         }
         return new HashMap<>();
     }
@@ -114,7 +111,6 @@ public class Client {
             Map<String, String> responsePayload = sendRequest(serverAddress, serverPort, "LOG_IN", requestPayload);
             token = responsePayload.get("Token") != null ? responsePayload.get("Token") : "";
         } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 
@@ -157,7 +153,6 @@ public class Client {
                 System.out.println("Pour se déconnecter, veuillez entrer /logout");
                 System.out.println("Pour quitter l'application, veuillez entrer /exit");
             } catch (IOException e) {
-                e.printStackTrace();
             }
         } else {
             try {
@@ -172,7 +167,6 @@ public class Client {
                     new SendMessage(serverAddress, serverPort, action).start();
                 }
             } catch (IOException e) {
-                e.printStackTrace();
             }
         }
         return false;
@@ -231,7 +225,6 @@ public class Client {
                     listeningSocket.close();
                     listeningSocket = new ServerSocket(listeningSocket.getLocalPort());
                 } catch (Exception e) {
-                    e.printStackTrace();
                 }
             }
         }
