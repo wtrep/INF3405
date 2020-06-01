@@ -12,17 +12,21 @@ import java.net.*;
 import java.util.*;
 import java.util.concurrent.*;
 
-public class Serveur
+public class Serveur extends Thread
 {
 	private volatile static ConcurrentMap<String, ConnectedUser> connectedUsers;
     private volatile static BlockingQueue<Message> messagesQueue;
     private static ServerSocket listener;
+	private boolean serverRunning;
 
     public Serveur() {
     	connectedUsers = new ConcurrentHashMap<>();
     	messagesQueue = new LinkedBlockingQueue<>();
+    	serverRunning = false;
 	}
-
+	public boolean getServerRunning(){
+    	return serverRunning;
+	}
     private void initiateServer() {
 		BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
 		String serverAddress = validateIP(reader);
@@ -38,6 +42,7 @@ public class Serveur
 		}
 
 		System.out.format("The server is running on %s:%d%n", serverAddress, serverPort);
+		serverRunning = true;
     }
 
 	private String validateIP(BufferedReader reader) {
@@ -84,7 +89,15 @@ public class Serveur
 		return serverPort;
 	}
 
-	private void run() {
+	public void closeSocket(){
+    	try{
+    		listener.close();
+		} catch (IOException e){
+    		e.printStackTrace();
+		}
+	}
+
+	public void run() {
 		initiateServer();
 		MessageHandler messageHandler = new MessageHandler(connectedUsers, messagesQueue);
 		messageHandler.start();
@@ -96,14 +109,13 @@ public class Serveur
 				ClientHandler client = new ClientHandler(listener.accept(), connectedUsers, messagesQueue);
 				client.start();
 			}
-		} catch (Exception e) {
-			e.printStackTrace();
+		} catch (IOException e) {
 		}
 		finally
 		{
 			try {
 				listener.close();
-			} catch (Exception e) {
+			} catch (IOException e) {
 				e.printStackTrace();
 			}
 		}
@@ -352,7 +364,30 @@ public class Serveur
 
 	public static void main(String[] args) throws Exception
 	{
+		BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
 		Serveur serveur = new Serveur();
-		serveur.run();
+		String choice = "start";
+		while(!choice.matches("quit")){
+			if(choice.matches("restart") || choice.matches("start")){
+				if(choice.matches("restart")) {
+					System.out.println("Fermeture du serveur...");
+					serveur.closeSocket();
+					serveur.interrupt();
+					serveur = new Serveur();
+					System.out.println("SUCCES");
+				}
+				serveur.setDaemon(true);
+				serveur.start();
+				while (!serveur.getServerRunning()) {
+					Thread.sleep(100);
+				}
+			}
+			System.out.println(
+					"Fermer le programme: quit\n" +
+					"Restart server: restart"
+			);
+			choice = reader.readLine();
+		}
+		serveur.interrupt();
 	}
 }
